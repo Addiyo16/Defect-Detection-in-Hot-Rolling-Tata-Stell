@@ -1,0 +1,2 @@
+model,ap,auc,best_f1,best_precision,best_recall,best_k,tp,fp
+ensemble_hgb_xgb_cat,0.30992939599583136,0.8742341769169141,0.410958904109589,0.375,0.45454545454545453,80,30,50

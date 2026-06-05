@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data directory (contains large CSV files, competition rules often prohibit sharing raw data)
+Data/
+
+# CatBoost output
+catboost_info/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual environment (if any)
+env/
+venv/
+.env
+
+# Streamlit config and cache
+.streamlit/
+*.log
