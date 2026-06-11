@@ -103,13 +103,14 @@ DATA_DIR = os.path.join(PROJECT_DIR, "Data")
 def load_model_assets():
     imputer = joblib.load(os.path.join(MODEL_DIR, "imputer_full.joblib"))
     scaler = joblib.load(os.path.join(MODEL_DIR, "scaler_full.joblib"))
+    ifor = joblib.load(os.path.join(MODEL_DIR, "ifor_full.joblib"))
     hgb = joblib.load(os.path.join(MODEL_DIR, "hgb_reg_model.joblib"))
     xgb = joblib.load(os.path.join(MODEL_DIR, "xgb_reg_model.joblib"))
     cat = joblib.load(os.path.join(MODEL_DIR, "cat_reg_model.joblib"))
-    return imputer, scaler, hgb, xgb, cat
+    return imputer, scaler, ifor, hgb, xgb, cat
 
 try:
-    imputer, scaler, hgb, xgb, cat = load_model_assets()
+    imputer, scaler, ifor, hgb, xgb, cat = load_model_assets()
     models_loaded = True
 except Exception as e:
     st.error(f"Error loading model files from {MODEL_DIR}. Please make sure train_pipeline.py has run successfully. Details: {e}")
@@ -140,7 +141,7 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     X["row_skew"] = base.skew(axis=1).fillna(0)
     X["row_kurt"] = base.kurt(axis=1).fillna(0)
 
-    # Adjacent differences
+    # Adjacent differences (1st Derivative)
     values = base.to_numpy(dtype=float)
     diffs = np.diff(values, axis=1)
     X["adj_diff_mean"] = np.nanmean(diffs, axis=1)
@@ -148,6 +149,18 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     X["adj_diff_abs_mean"] = np.nanmean(np.abs(diffs), axis=1)
     X["adj_diff_max"] = np.nanmax(diffs, axis=1)
     X["adj_diff_min"] = np.nanmin(diffs, axis=1)
+
+    # Curvature (2nd Derivative)
+    diffs2 = np.diff(diffs, axis=1)
+    X["adj_diff2_mean"] = np.nanmean(diffs2, axis=1)
+    X["adj_diff2_std"] = np.nanstd(diffs2, axis=1)
+    X["adj_diff2_abs_mean"] = np.nanmean(np.abs(diffs2), axis=1)
+
+    # FFT Features (Frequency Domain Analysis)
+    signal = base.fillna(0).to_numpy(dtype=float)
+    fft_vals = np.abs(np.fft.fft(signal, axis=1))
+    for i in range(1, 6):
+        X[f"fft_coef_{i}"] = fft_vals[:, i]
 
     # Process stage averages
     stages = {
@@ -258,6 +271,9 @@ if models_loaded:
         
         # 5. Robust Scaling (using the saved full scaler object)
         X_scaled = pd.DataFrame(scaler.transform(X_clean), columns=expected_cols)
+        
+        # 5.5 Anomaly Detection (using the saved full Isolation Forest object)
+        X_scaled["anomaly_score"] = ifor.score_samples(X_scaled)
         
         # 6. Predict Probabilities
         hgb_p = hgb.predict_proba(X_scaled)[:, 1]

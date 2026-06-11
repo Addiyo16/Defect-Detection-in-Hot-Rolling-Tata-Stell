@@ -10,7 +10,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.impute import SimpleImputer
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, IsolationForest
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from scipy.stats import rankdata
@@ -54,7 +54,7 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     X["row_skew"] = base.skew(axis=1).fillna(0)
     X["row_kurt"] = base.kurt(axis=1).fillna(0)
 
-    # Adjacent differences
+    # Adjacent differences (1st Derivative)
     values = base.to_numpy(dtype=float)
     diffs = np.diff(values, axis=1)
     X["adj_diff_mean"] = np.nanmean(diffs, axis=1)
@@ -62,6 +62,18 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     X["adj_diff_abs_mean"] = np.nanmean(np.abs(diffs), axis=1)
     X["adj_diff_max"] = np.nanmax(diffs, axis=1)
     X["adj_diff_min"] = np.nanmin(diffs, axis=1)
+
+    # Curvature (2nd Derivative)
+    diffs2 = np.diff(diffs, axis=1)
+    X["adj_diff2_mean"] = np.nanmean(diffs2, axis=1)
+    X["adj_diff2_std"] = np.nanstd(diffs2, axis=1)
+    X["adj_diff2_abs_mean"] = np.nanmean(np.abs(diffs2), axis=1)
+
+    # FFT Features (Frequency Domain Analysis)
+    signal = base.fillna(0).to_numpy(dtype=float)
+    fft_vals = np.abs(np.fft.fft(signal, axis=1))
+    for i in range(1, 6):
+        X[f"fft_coef_{i}"] = fft_vals[:, i]
 
     # Process stage features
     stages = {
@@ -186,6 +198,15 @@ for fold, (tr_idx, val_idx) in enumerate(cv.split(X_train_full, y), start=1):
     X_tr_scaled = pd.DataFrame(scaler.fit_transform(X_tr_clean), columns=all_tr_cols)
     X_val_scaled = pd.DataFrame(scaler.transform(X_val_clean), columns=all_tr_cols)
     
+    # 5. Anomaly Detection (fit ONLY on training fold)
+    ifor = IsolationForest(n_estimators=100, random_state=RANDOM_STATE)
+    ifor.fit(X_tr_scaled)
+    X_tr_scaled["anomaly_score"] = ifor.score_samples(X_tr_scaled)
+    X_val_scaled["anomaly_score"] = ifor.score_samples(X_val_scaled)
+    
+    # Update all_tr_cols to include anomaly_score
+    all_tr_cols = X_tr_scaled.columns
+    
     # Train and evaluate each model on this fold
     for name, model in models.items():
         import copy
@@ -308,6 +329,18 @@ X_te_full_scaled = pd.DataFrame(scaler_full.transform(X_te_full_clean), columns=
 
 # Save scaler
 joblib.dump(scaler_full, os.path.join(MODEL_DIR, "scaler_full.joblib"))
+
+# Fit Isolation Forest on full dataset
+ifor_full = IsolationForest(n_estimators=100, random_state=RANDOM_STATE)
+ifor_full.fit(X_tr_full_scaled)
+X_tr_full_scaled["anomaly_score"] = ifor_full.score_samples(X_tr_full_scaled)
+X_te_full_scaled["anomaly_score"] = ifor_full.score_samples(X_te_full_scaled)
+
+# Save Isolation Forest
+joblib.dump(ifor_full, os.path.join(MODEL_DIR, "ifor_full.joblib"))
+
+# Update all_full_cols to include anomaly_score
+all_full_cols = X_tr_full_scaled.columns
 
 # Train all models and predict test set probabilities
 test_ranks = {name: np.zeros(len(test)) for name in models}
