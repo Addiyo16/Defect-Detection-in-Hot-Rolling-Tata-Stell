@@ -248,9 +248,10 @@ if models_loaded:
         expected_cols = scaler.feature_names_in_
         X_feat = X_feat.reindex(columns=expected_cols, fill_value=0.0)
         
-        # 3. Imputation (using the saved full imputer object)
-        x_cols_raw = [c for c in expected_cols if c.upper().startswith("X") and "_" not in c]
-        X_feat[x_cols_raw] = imputer.transform(X_feat[x_cols_raw])
+        # 3. Imputation (using the saved full imputer statistics to avoid version mismatch)
+        for col, median_val in zip(imputer.feature_names_in_, imputer.statistics_):
+            if col in X_feat.columns:
+                X_feat[col] = X_feat[col].fillna(median_val)
         
         # 4. Clean missing stats values (skew/kurt NaNs)
         X_clean = X_feat.fillna(0.0).replace([np.inf, -np.inf], 0.0)
