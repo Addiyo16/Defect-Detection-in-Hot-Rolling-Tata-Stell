@@ -242,11 +242,11 @@ if models_loaded:
         )
         
         if preset == "F1-Optimal (Maximize Efficiency)":
-            selected_thr = 0.9409
-            st.sidebar.info("Preset selected: F1-Optimal (Threshold: 0.94). Balances precision and recall to control false alarms.")
+            selected_thr = 0.9489
+            st.sidebar.info("Preset selected: F1-Optimal (Threshold: 0.95). Balances precision and recall to control false alarms.")
         elif preset == "Zero FN (Safety-First)":
-            selected_thr = 0.2785
-            st.sidebar.info("Preset selected: Zero FN (Threshold: 0.28). Flags any potential defect to miss zero true failures.")
+            selected_thr = 0.2741
+            st.sidebar.info("Preset selected: Zero FN (Threshold: 0.27). Flags any potential defect to miss zero true failures.")
         else:
             selected_thr = st.sidebar.slider("Custom Rank Threshold", 0.0, 1.0, 0.85, 0.01)
 
