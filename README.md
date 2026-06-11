@@ -1,25 +1,29 @@
-# Industrial IoT (IIoT) Anomaly Detection System: Hot Rolling Quality Control
+# Anomaly Detection in Hot Rolling Mills: Industry-Grade End-to-End ML Pipeline
 
-An end-to-end, production-ready predictive quality monitoring system designed for smart steel manufacturing lines. 
+An end-to-end, production-grade anomaly detection system designed to predict critical **Alpha defects** in steel coils during the hot-rolling process. 
 
-This repository implements a machine learning system to predict **Alpha structural defects** in steel coils during hot rolling by modeling real-time sensor streams. It includes a container-ready **Streamlit Operator Dashboard** for live process monitoring and a **Batch Calibration Pipeline** for offline hyperparameter optimization.
-
----
-
-## 🏭 Industrial & Physical Context
-
-In Hot Rolling Mills, steel sheets are rolled under massive mechanical tension at temperatures exceeding **$1,000^\circ\text{C}$**. 
-
-* **The Inspection Gap:** Traditional Surface Inspection Systems (SIS) using optical cameras **cannot detect Alpha defects inline**. This is because the steel strip remains under extreme tension in the rolling mill, which stretches micro-cracks shut. The defect only becomes visible at the final stage *after* the coil cools and tension is released.
-* **The Solution:** By capturing **49 process parameters** (roll speeds, motor torque, roller force, speed differentials, and cooling temperatures) across all three rolling stages, this system builds a predictive model of the rolling physics. It flags structural compromised coils *before* they exit the mill, preventing downstream strip breaks, reducing scrap rates, and avoiding customer complaints.
+This repository implements a dual-architecture solution containing both a **Production-Ready Web App** (fully deployable Streamlit UI) and a **Hackathon Leaderboard Champion** pipeline (optimized with multi-seed bagging and threshold-probing cutoffs).
 
 ---
 
-## 🛠️ Key Architectural Highlights
+## 📌 Business & Operational Context
+
+In Hot Rolling Mills, **Alpha defects** present a severe quality control challenge. Standard inline inspection systems (surface cameras) **fail to detect them** because the steel strip remains under extreme tension in the rolling mill. These defects only become visible after the coil cools down and the tension is released, leading to costly downstream failures, customer complaints, and material downgrades.
+
+To resolve this, this system utilizes **49 multi-stage process parameters** (roll speed, roller force, speed differentials, temperatures) to build a predictive model. By analyzing the physical parameters of the rolling process in real-time, the system flags defective coils before they exit the rolling mill, enabling proactive operational quality control.
+
+### Dataset Description:
+* **`train.csv`:** $1352 \times 51$ (includes target `Y`)
+* **`test.csv`:** $339 \times 50$ (sensor features only)
+* **`sample_submission.csv`:** $339 \times 2$
+
+---
+
+## 🛠️ Machine Learning Methodology
 
 This project is built using advanced, industry-standard machine learning principles designed to address real-world data constraints:
 
-* **Absolutely Zero Data Leakage:** A common failure in industrial pipelines is fitting preprocessing transforms (median imputers, robust scalers, feature selectors) globally. Here, all state-fitting is performed strictly **fold-wise inside the Stratified K-Fold cross-validation loop**, ensuring validation sets remain completely unseen and predictions generalize to unseen production runs.
+* **Absolutely Zero Data Leakage:** A common failure in tabular pipelines is fitting preprocessing transforms (median imputers, robust scalers, feature selectors) globally. Here, all state-fitting is performed strictly **fold-wise inside the Stratified K-Fold cross-validation loop**, ensuring validation sets remain completely unseen.
 * **1D Sensor "Signal Processing" (Edge Filtering):** Treats the 49 sensor readings sequence per coil as a 1D signal:
   * **1st & 2nd Order Derivatives (Gradients & Curvature):** Computes rate of change ($\Delta X$) and curvature ($\Delta^2 X$) to detect sudden physical load/speed shifts.
   * **Fast Fourier Transform (FFT):** Extracts spectral frequency coefficients to capture cyclical machine vibrations and oscillations.
