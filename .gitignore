@@ -23,4 +23,5 @@ venv/
 
 # Generated output submissions
 submissions/
+submissions_hackathon/
 *.csv
