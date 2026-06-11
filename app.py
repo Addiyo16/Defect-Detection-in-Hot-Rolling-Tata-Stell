@@ -94,7 +94,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Project paths
-PROJECT_DIR = "d:/Adarsh/TataSteelAIHackathon"
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(PROJECT_DIR, "models")
 DATA_DIR = os.path.join(PROJECT_DIR, "Data")
 
@@ -463,7 +463,7 @@ if models_loaded:
             
             # Show the OOF validation metrics
             st.markdown("#### 📋 Out-of-Fold (OOF) Validation Summary")
-            val_summary_path = os.path.join(PROJECT_DIR, "submissions_v5", "validation_summary.csv")
+            val_summary_path = os.path.join(PROJECT_DIR, "submissions", "validation_summary.csv")
             if os.path.exists(val_summary_path):
                 st.dataframe(pd.read_csv(val_summary_path), use_container_width=True)
             else:

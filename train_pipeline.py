@@ -17,9 +17,9 @@ from scipy.stats import rankdata
 import joblib
 
 # Setup directories
-PROJECT_DIR = "d:/Adarsh/TataSteelAIHackathon"
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(PROJECT_DIR, "Data")
-SUBMISSION_DIR = os.path.join(PROJECT_DIR, "submissions_v5")
+SUBMISSION_DIR = os.path.join(PROJECT_DIR, "submissions")
 os.makedirs(SUBMISSION_DIR, exist_ok=True)
 
 # Load data

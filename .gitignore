@@ -20,3 +20,7 @@ venv/
 # Streamlit config and cache
 .streamlit/
 *.log
+
+# Generated output submissions
+submissions/
+*.csv
